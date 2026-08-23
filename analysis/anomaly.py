@@ -15,6 +15,7 @@ import statistics
 from dataclasses import dataclass
 from typing import List, Optional
 
+
 @dataclass
 class Reading:
     id: int
@@ -54,6 +55,9 @@ def detect_anomalies(
     history and are not flagged.
     """
     results = []
+    if not readings or window <= 0:
+        return results
+
     for i in range(window, len(readings)):
         history = [r.value for r in readings[i - window : i]]
         current = readings[i]
