@@ -1,13 +1,14 @@
 """Subscribes to sensor MQTT topics and persists incoming readings to SQLite."""
 import json
 import logging
+import os
 
 import paho.mqtt.client as mqtt
 
 from ingest.db import init_db, insert_reading
 
-BROKER_HOST = "localhost"
-BROKER_PORT = 1883
+BROKER_HOST = os.environ.get("MQTT_BROKER_HOST", "localhost")
+BROKER_PORT = int(os.environ.get("MQTT_BROKER_PORT", "1883"))
 TOPIC_FILTER = "sensors/#"  # subscribes to sensors/temperature, sensors/humidity, etc.
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")

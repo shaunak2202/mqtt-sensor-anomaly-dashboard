@@ -1,7 +1,9 @@
-"""SQLite schema and helper functions for storing sensor readings."""
+"""SQLite schema and helper functions for storing sensor readings and
+per-sensor detector settings."""
 import sqlite3
 import os
 from contextlib import contextmanager
+from typing import Tuple
 
 DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
 DB_PATH = os.path.join(DB_DIR, "sensors.db")
@@ -17,6 +19,12 @@ CREATE TABLE IF NOT EXISTS readings (
 
 CREATE INDEX IF NOT EXISTS idx_readings_sensor_ts
     ON readings (sensor, timestamp);
+
+CREATE TABLE IF NOT EXISTS settings (
+    sensor TEXT PRIMARY KEY,
+    window INTEGER,
+    threshold REAL
+);
 """
 
 
@@ -44,15 +52,27 @@ def insert_reading(sensor: str, value: float, timestamp: str):
         )
 
 
-def fetch_recent(sensor: str, limit: int = 200):
-    """Return the most recent `limit` readings for a sensor, oldest first."""
+def fetch_recent(sensor: str, limit: int = 200, since: str = None):
+    """Return the most recent `limit` readings for a sensor, oldest first.
+    If `since` (an ISO timestamp string) is given, only readings with a
+    timestamp >= since are considered (still capped at `limit`, most
+    recent first internally then reversed to chronological order).
+    """
     with get_connection() as conn:
-        cur = conn.execute(
-            """SELECT id, sensor, value, timestamp, is_anomaly
-               FROM readings WHERE sensor = ?
-               ORDER BY timestamp DESC LIMIT ?""",
-            (sensor, limit),
-        )
+        if since:
+            cur = conn.execute(
+                """SELECT id, sensor, value, timestamp, is_anomaly
+                   FROM readings WHERE sensor = ? AND timestamp >= ?
+                   ORDER BY timestamp DESC LIMIT ?""",
+                (sensor, since, limit),
+            )
+        else:
+            cur = conn.execute(
+                """SELECT id, sensor, value, timestamp, is_anomaly
+                   FROM readings WHERE sensor = ?
+                   ORDER BY timestamp DESC LIMIT ?""",
+                (sensor, limit),
+            )
         rows = cur.fetchall()
     return list(reversed(rows))
 
@@ -103,6 +123,31 @@ def sensor_stats(sensor: str):
         "latest_timestamp": latest_row[1] if latest_row else None,
         "latest_anomaly_timestamp": latest_anomaly_row[0] if latest_anomaly_row else None,
     }
+
+
+def get_sensor_settings(sensor: str, default_window: int, default_threshold: float) -> Tuple[int, float]:
+    """Return (window, threshold) for a sensor, falling back to the given
+    defaults if no override has been saved.
+    """
+    with get_connection() as conn:
+        cur = conn.execute(
+            "SELECT window, threshold FROM settings WHERE sensor = ?", (sensor,)
+        )
+        row = cur.fetchone()
+    if row is None:
+        return default_window, default_threshold
+    window, threshold = row
+    return (window if window is not None else default_window,
+            threshold if threshold is not None else default_threshold)
+
+
+def set_sensor_settings(sensor: str, window: int, threshold: float):
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO settings (sensor, window, threshold) VALUES (?, ?, ?)
+               ON CONFLICT(sensor) DO UPDATE SET window = ?, threshold = ?""",
+            (sensor, window, threshold, window, threshold),
+        )
 
 
 if __name__ == "__main__":

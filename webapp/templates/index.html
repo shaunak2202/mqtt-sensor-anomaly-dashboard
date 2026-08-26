@@ -16,7 +16,7 @@
     .subtitle { color: #9aa0a6; margin-bottom: 24px; font-size: 14px; }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
       gap: 20px;
     }
     .card {
@@ -45,6 +45,40 @@
       padding: 2px 8px;
       font-size: 12px;
     }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #9aa0a6;
+      margin-bottom: 10px;
+      background: #11141c;
+      border: 1px solid #21242f;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .controls label { display: flex; align-items: center; gap: 4px; }
+    .tune-input, .range-select {
+      background: #0f1117;
+      color: #e6e6e6;
+      border: 1px solid #2a2e3a;
+      border-radius: 4px;
+      padding: 2px 6px;
+      width: 64px;
+    }
+    .range-select { width: auto; }
+    .apply-btn {
+      background: #2b5fd1;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .apply-btn:hover { background: #3a6fe0; }
+    .apply-status { font-size: 11px; color: #7ee787; min-width: 70px; }
     canvas { max-height: 240px; }
     .empty-note {
       color: #9aa0a6;
@@ -55,7 +89,7 @@
 </head>
 <body>
   <h1>MQTT Sensor Anomaly Dashboard</h1>
-  <div class="subtitle">Live readings from simulated MQTT sensors, refreshed every few seconds. Red points are flagged anomalies (rolling z-score / EWMA detector).</div>
+  <div class="subtitle">Live readings from simulated MQTT sensors, refreshed every few seconds. Red points are flagged anomalies (rolling z-score / EWMA detector). Use the controls on each card to pick a time range or retune sensitivity live.</div>
 
   <div id="grid" class="grid"></div>
   <div id="empty" class="empty-note" style="display:none;">

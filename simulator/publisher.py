@@ -7,14 +7,15 @@ Occasionally injects spikes/dropouts so downstream anomaly detection has
 something real to catch.
 """
 import json
+import os
 import random
 import time
 from datetime import datetime, timezone
 
 import paho.mqtt.client as mqtt
 
-BROKER_HOST = "localhost"
-BROKER_PORT = 1883
+BROKER_HOST = os.environ.get("MQTT_BROKER_HOST", "localhost")
+BROKER_PORT = int(os.environ.get("MQTT_BROKER_PORT", "1883"))
 PUBLISH_INTERVAL_SECONDS = 2
 ANOMALY_PROBABILITY = 0.04  # ~4% of readings get an injected spike
 

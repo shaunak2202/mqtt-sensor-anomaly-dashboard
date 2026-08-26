@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  broker:
+    image: eclipse-mosquitto:2
+    ports:
+      - "1883:1883"
+    restart: unless-stopped
+
+  simulator:
+    build: .
+    command: python -m simulator.publisher
+    environment:
+      - MQTT_BROKER_HOST=broker
+      - MQTT_BROKER_PORT=1883
+    depends_on:
+      - broker
+    restart: unless-stopped
+
+  subscriber:
+    build: .
+    command: python -m ingest.subscriber
+    environment:
+      - MQTT_BROKER_HOST=broker
+      - MQTT_BROKER_PORT=1883
+    depends_on:
+      - broker
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  worker:
+    build: .
+    command: python -m analysis.worker
+    environment:
+      - ALERT_HOOKS=log
+    depends_on:
+      - subscriber
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  webapp:
+    build: .
+    command: python -m webapp.app
+    ports:
+      - "5000:5000"
+    depends_on:
+      - subscriber
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
